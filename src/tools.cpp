@@ -33,8 +33,8 @@ MatrixXd Tools::CalculateJacobian(const VectorXd &x_state) {
   double a = sqrt(b);
   double c = b * a;
   MatrixXd H(3, 4);
-  H << px / a, py / a, 0, 0,
-      -py / b, -px / b, 0, 0,
+  H <<                      px / a,                       py / a,      0,      0,
+                           -py / b,                       px / b,      0,      0,
       py * (vx * py - vy * px) / c, px * (vy * px - vx * py) / c, px / a, py / a;
   return H;
 }

@@ -63,7 +63,9 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       */
       double rho = measurement_pack.raw_measurements_[0];
       double phi = measurement_pack.raw_measurements_[1];
-      x << rho, phi, 0, 0;
+      double px = rho * cos(phi);
+      double py = rho * sin(phi);
+      x << px, py, 0, 0;
     }
     else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
       /**
@@ -75,8 +77,8 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     MatrixXd P(4, 4);
     P << 1, 0,    0,    0,
          0, 1,    0,    0,
-         0, 0, 1000,    0,
-         0, 0,    0, 1000;
+         0, 0, 1,    0,
+         0, 0,    0, 1;
 
     MatrixXd F(4, 4);
 
@@ -87,7 +89,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
          0, 1, 0, 0;
 
     previous_timestamp_ = measurement_pack.timestamp_;
-    ekf_.Init(x, P, F, H, R_laser_, Q);
+    ekf_.Init(x, P, F, H, R_laser_, R_radar_, Q);
 
     // done initializing, no need to predict or update
     is_initialized_ = true;
@@ -120,23 +122,28 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
              q3 * noise_ax_,              0, q2 * noise_ax_,              0,
                           0, q3 * noise_ay_,              0, q2 * noise_ay_;
 
-  ekf_.Predict();
-
   /*****************************************************************************
    *  Update
    ****************************************************************************/
 
+  // uncomment the following lines and change accordingly if either type of measurement shall be turned off
+//  if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
+//    return;
+//  }
+
+  ekf_.Predict();
+
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
     // Radar updates
-    // TODO: not implemented yet
+    ekf_.UpdateEKF(measurement_pack.raw_measurements_);
   } else {
     // Laser updates
-    VectorXd z(2);
-    z << measurement_pack.raw_measurements_[0], measurement_pack.raw_measurements_[1];
-    ekf_.Update(z);
+    ekf_.Update(measurement_pack.raw_measurements_);
   }
 
   // print the output
   cout << "x_ = " << ekf_.x_ << endl;
   cout << "P_ = " << ekf_.P_ << endl;
+
+  previous_timestamp_ = measurement_pack.timestamp_;
 }
