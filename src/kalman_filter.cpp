@@ -23,9 +23,17 @@ void KalmanFilter::Init(Eigen::VectorXd &x_in, Eigen::MatrixXd &P_in, Eigen::Mat
         0, 0, 0, 1;
 }
 
-void KalmanFilter::Predict() {
-  x_ = F_ * x_;
+bool KalmanFilter::Predict() {
+  VectorXd updated = F_ * x_;
+  // if the px^2 + py^2 from the resulted prediction is too close to 0,
+  // skip this round of predict-and-update (px^2 + py^2 = 0 will make EKF failed because of
+  // 0 division)
+  if (updated[0] * updated[0] + updated[1] * updated[1] < 1e-5) {
+    return false;
+  }
+  x_ = updated;
   P_ = F_ * P_ * F_.transpose() + Q_;
+  return true;
 }
 
 void KalmanFilter::Update(const VectorXd &z) {
@@ -48,6 +56,7 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   VectorXd y(3);
   y << rho_p, phi_p, rho_dp;
   y = z - y;
+  // make sure the phi error is within [-pi, pi]
   while (y[1] < -M_PI) {
     y[1] += 2 * M_PI;
   }

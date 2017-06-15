@@ -77,8 +77,8 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     MatrixXd P(4, 4);
     P << 1, 0,    0,    0,
          0, 1,    0,    0,
-         0, 0, 1,    0,
-         0, 0,    0, 1;
+         0, 0, 1000,    0,
+         0, 0,    0, 1000;
 
     MatrixXd F(4, 4);
 
@@ -131,7 +131,9 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 //    return;
 //  }
 
-  ekf_.Predict();
+  if (!ekf_.Predict()) {
+    return;
+  }
 
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
     // Radar updates

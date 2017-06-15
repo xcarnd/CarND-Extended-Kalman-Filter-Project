@@ -57,8 +57,9 @@ public:
    * Prediction Predicts the state and the state covariance
    * using the process model
    * @param delta_T Time between k and k+1 in s
+   * @return true if the Update can be safely be carried on, otherwise false
    */
-  void Predict();
+  bool Predict();
 
   /**
    * Updates the state by using standard Kalman Filter equations
